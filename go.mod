@@ -5,7 +5,7 @@ go 1.19
 require (
 	code.gitea.io/sdk/gitea v0.15.1
 	github.com/google/go-github/v50 v50.2.0
-	github.com/libgit2/git2go/v33 v33.0.9
+	github.com/libgit2/git2go/v34 v34.0.0
 	github.com/r3labs/diff/v3 v3.0.1
 	github.com/rs/zerolog v1.29.0
 	github.com/spf13/cobra v1.6.1
@@ -31,3 +31,5 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )
+
+replace github.com/libgit2/git2go/v34 => ./git2go

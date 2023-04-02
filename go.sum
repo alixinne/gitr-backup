@@ -28,8 +28,8 @@ github.com/hashicorp/go-version v1.2.1 h1:zEfKbn2+PDgroKdiOzqiE8rsmLqU2uwi5PB5pB
 github.com/hashicorp/go-version v1.2.1/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/inconshreveable/mousetrap v1.0.1 h1:U3uMjPSQEBMNp1lFxmllqCPM6P5u/Xq7Pgzkat/bFNc=
 github.com/inconshreveable/mousetrap v1.0.1/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/libgit2/git2go/v33 v33.0.9 h1:4ch2DJed6IhJO28BEohkUoGvxLsRzUjxljoNFJ6/O78=
-github.com/libgit2/git2go/v33 v33.0.9/go.mod h1:KdpqkU+6+++4oHna/MIOgx4GCQ92IPCdpVRMRI80J+4=
+github.com/libgit2/git2go/v34 v34.0.0 h1:UKoUaKLmiCRbOCD3PtUi2hD6hESSXzME/9OUZrGcgu8=
+github.com/libgit2/git2go/v34 v34.0.0/go.mod h1:blVco2jDAw6YTXkErMMqzHLcAjKkwF0aWIRHBqiJkZ0=
 github.com/mattn/go-colorable v0.1.12 h1:jF+Du6AlPIjs2BiUiQlKOX0rt3SujHxPnksPKZbaA40=
 github.com/mattn/go-colorable v0.1.12/go.mod h1:u5H1YNBxpqRaxsYJYSkiCWKzEfiAb1Gb520KVy5xxl4=
 github.com/mattn/go-isatty v0.0.14 h1:yVuAays6BHfxijgZPzw+3Zlu5yQgKGP2/hcQbHb7S9Y=

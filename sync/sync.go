@@ -17,7 +17,7 @@ import (
 
 	"github.com/r3labs/diff/v3"
 
-	git "github.com/libgit2/git2go/v33"
+	git "github.com/libgit2/git2go/v34"
 )
 
 type repositorySource struct {

@@ -1,8 +1,14 @@
+before:
+  hooks:
+    - cd git2go && make install-static
+
 builds:
   - goos:
       - linux
     goarch:
       - amd64
+    tags:
+      - static
 
 archives:
   - format: tar.gz
@@ -28,6 +34,23 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+dockers:
+  - image_templates:
+    - vtavernier/gitr-backup:latest
+    - vtavernier/gitr-backup:{{ .Major }}
+    - vtavernier/gitr-backup:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+
+    build_flag_templates:
+    - "--pull"
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+    - "--platform=linux/amd64"
+
+    extra_files:
+    - .
 
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
