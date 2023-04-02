@@ -1,0 +1,8 @@
+hosts:
+  - type: github
+    token: $GITHUB_TOKEN # Fetched from environment variable
+    use_as: source
+  - type: gitea
+    base: https://gitea.example.com
+    token: $GITEA_API_TOKEN # Fetched from environment variable
+    use_as: backup
