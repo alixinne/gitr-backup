@@ -2,7 +2,6 @@ package sync
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"gitr-backup/config"
@@ -175,19 +174,19 @@ func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository
 	changedRefSet := map[string]struct{}{}
 	deletedRefSet := map[string]struct{}{}
 
-	// Get the branches for the source repository
-	sourceBranches, err := (*sourceRepo).ListBranches(ctx)
+	// Get the refs for the source repository
+	sourceRefs, err := (*sourceRepo).ListRefs(ctx)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Failed getting source repository branches: %v", err))
+		return errors.New(fmt.Sprintf("Failed getting source repository refs: %v", err))
 	}
 
-	// Get the branches for the destination repository
-	destBranches, err := destRepo.ListBranches(ctx)
+	// Get the refs for the destination repository
+	destRefs, err := destRepo.ListRefs(ctx)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Failed getting destination repository branches: %v", err))
+		return errors.New(fmt.Sprintf("Failed getting destination repository refs: %v", err))
 	}
 
-	changelog, err := diff.Diff(destBranches, sourceBranches, diff.DisableStructValues())
+	changelog, err := diff.Diff(destRefs, sourceRefs, diff.DisableStructValues())
 	if err != nil {
 		return errors.New(fmt.Sprintf("Comparison error: %v", err))
 	}
@@ -196,28 +195,28 @@ func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository
 		for _, change := range changelog {
 			if change.Type == "delete" {
 				// In case of a deletion, the from field contains the entire ref
-				name := change.From.(repository.Branch).RefName()
+				name := change.From.(repository.Ref).RefName
 
 				_, found := changedRefSet[name]
-				// Only mark a branch as deleted if it wasn't changed already
+				// Only mark a ref as deleted if it wasn't changed already
 				if !found {
 					deletedRefSet[name] = struct{}{}
 				}
 			} else if change.Type == "update" {
-				// The SHA of a branch changed, so we need to fetch the branch from its path
+				// The SHA of a ref changed, so we need to fetch the ref from its path
 				// since the change entry only contains the SHA change and not the full entry
 				i, _ := strconv.Atoi(change.Path[0])
-				name := destBranches[i].Name
+				name := destRefs[i].Name
 
 				changedRefSet[name] = struct{}{}
-				// A branch that is changed was in fact, not deleted
+				// A ref that is changed was in fact, not deleted
 				delete(deletedRefSet, name)
 			} else if change.Type == "create" {
-				// On creation, the branch information is in the To field
-				name := change.To.(repository.Branch).RefName()
+				// On creation, the ref information is in the To field
+				name := change.To.(repository.Ref).RefName
 
 				changedRefSet[name] = struct{}{}
-				// A branch that is changed was in fact, not deleted
+				// A ref that is changed was in fact, not deleted
 				delete(deletedRefSet, name)
 			} else {
 				log.Fatal().Any("change", change).Msg("Unknown change type")
@@ -230,10 +229,8 @@ func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository
 			Any("deleted", deletedRefSet).
 			Msg("Differences found")
 	} else {
-		logger.Debug().Msg("No changes found in branches")
+		logger.Debug().Msg("No changes found in refs")
 	}
-
-	// TODO: Compare tags as well
 
 	if len(changedRefSet) == 0 && len(deletedRefSet) == 0 {
 		return nil
@@ -292,26 +289,6 @@ func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository
 	for k := range deletedRefSet {
 		refspecs = append(refspecs, fmt.Sprintf(":%s", k))
 	}
-
-	/*
-		iterator, err := cloned.NewReferenceNameIterator()
-		if err != nil {
-			return err
-		}
-
-		for {
-			ref, err := iterator.Next()
-			if err != nil {
-				if err.(*git.GitError).Code == git.ErrIterOver {
-					break
-				}
-
-				return err
-			}
-
-			refspecs = append(refspecs, ref)
-		}
-	*/
 
 	logger.Info().
 		Str("clone_url", safeUrl(destCloneUrl)).

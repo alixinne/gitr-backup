@@ -2,16 +2,12 @@ package repository
 
 import (
 	"context"
-	"fmt"
 )
 
-type Branch struct {
+type Ref struct {
 	Name string `diff:"name, identifier"`
 	Sha string `diff:"sha"`
-}
-
-func (branch Branch) RefName() string {
-	return fmt.Sprintf("refs/heads/%s", branch.Name)
+	RefName string `diff:"ref_name"`
 }
 
 type Repository interface {
@@ -19,6 +15,6 @@ type Repository interface {
 	GetDescription() string
 	AddLabel(ctx context.Context, label string) error
 	RemoveLabel(ctx context.Context, label string) error
-	ListBranches(ctx context.Context) ([]Branch, error)
+	ListRefs(ctx context.Context) ([]Ref, error)
 	GetHttpsCloneUrl() (string, error)
 }
