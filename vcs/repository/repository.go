@@ -7,7 +7,7 @@ import (
 type Ref struct {
 	Name string `diff:"name, identifier"`
 	Sha string `diff:"sha"`
-	RefName string `diff:"ref_name"`
+	RefName string `diff:"-"`
 }
 
 type Repository interface {

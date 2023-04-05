@@ -327,14 +327,22 @@ func (this *syncContext) processRepo(logger zerolog.Logger, destRepo repository.
 					deletedRefSet[name] = struct{}{}
 				}
 			} else if change.Type == "update" {
-				// The SHA of a ref changed, so we need to fetch the ref from its path
-				// since the change entry only contains the SHA change and not the full entry
-				i, _ := strconv.Atoi(change.Path[0])
-				name := destRefs[i].RefName
+				if change.Path[1] == "sha" {
+					// The SHA of a ref changed, so we need to fetch the ref from its path
+					// since the change entry only contains the SHA change and not the full entry
+					i, _ := strconv.Atoi(change.Path[0])
+					name := sourceRefs[i].RefName
 
-				changedRefSet[name] = struct{}{}
-				// A ref that is changed was in fact, not deleted
-				delete(deletedRefSet, name)
+					changedRefSet[name] = struct{}{}
+				} else {
+					// The name of a branch changed, this means a branch was renamed
+					i, _ := strconv.Atoi(change.Path[0])
+					from := destRefs[i].RefName
+					to := sourceRefs[i].RefName
+
+					deletedRefSet[from] = struct{}{}
+					changedRefSet[to] = struct{}{}
+				}
 			} else if change.Type == "create" {
 				// On creation, the ref information is in the To field
 				name := change.To.(repository.Ref).RefName
