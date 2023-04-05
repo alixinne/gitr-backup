@@ -109,3 +109,24 @@ func (this *Gitea) GetRepositories(ctx context.Context) ([]repository.Repository
 func (this *Gitea) GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, error) {
 	return nil, errors.New("not implemented")
 }
+
+func (this *Gitea) CreateRepository(ctx context.Context, options *CreateRepositoryOptions) (repository.Repository, error) {
+	var repo *gitea.Repository
+	err := this.withContext(ctx, func(client *gitea.Client) error {
+		var err error
+		repo, _, err = client.CreateRepo(gitea.CreateRepoOption{
+			Name:        options.Name,
+			Description: options.Description,
+		})
+		return err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &giteaRepository{
+		host: this,
+		repo: repo,
+	}, nil
+}

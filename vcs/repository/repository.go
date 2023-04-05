@@ -17,4 +17,5 @@ type Repository interface {
 	RemoveLabel(ctx context.Context, label string) error
 	ListRefs(ctx context.Context) ([]Ref, error)
 	GetHttpsCloneUrl() (string, error)
+	GetUrl() string
 }

@@ -99,3 +99,7 @@ func (repo *githubRepository) GetHttpsCloneUrl() (string, error) {
 
 	return parsed.String(), nil
 }
+
+func (repo *githubRepository) GetUrl() string {
+	return repo.repo.GetHTMLURL()
+}

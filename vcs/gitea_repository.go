@@ -219,3 +219,7 @@ func (repo *giteaRepository) GetHttpsCloneUrl() (string, error) {
 
 	return parsed.String(), nil
 }
+
+func (repo *giteaRepository) GetUrl() string {
+	return repo.repo.HTMLURL
+}

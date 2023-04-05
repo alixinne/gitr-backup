@@ -97,3 +97,19 @@ func (this *GitHub) GetRepositoryByUrl(ctx context.Context, url string) (*reposi
 
 	return &ghRepo, nil
 }
+
+func (this *GitHub) CreateRepository(ctx context.Context, options *CreateRepositoryOptions) (repository.Repository, error) {
+	repo, _, err := this.client.Repositories.Create(ctx, "", &github.Repository{
+		Name: &options.Name,
+		Description: &options.Description,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &githubRepository {
+		host: this,
+		repo: repo,
+	}, nil
+}
