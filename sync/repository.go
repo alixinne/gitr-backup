@@ -1,7 +1,6 @@
 package sync
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"gitr-backup/constants"
@@ -22,7 +21,7 @@ import (
 )
 
 type repositorySource struct {
-	host   *vcs.Vcs
+	host   vcs.Vcs
 	source string
 }
 
@@ -40,17 +39,6 @@ func createMirrorRemote(repo *git.Repository, name, url string) (*git.Remote, er
 		return nil, err
 	}
 
-	mirrorVar := fmt.Sprintf("remote.%s.mirror", name)
-	config, err := repo.Config()
-	if err != nil {
-		return nil, err
-	}
-
-	err = config.SetBool(mirrorVar, true)
-	if err != nil {
-		return nil, err
-	}
-
 	return remote, nil
 }
 
@@ -64,7 +52,7 @@ func safeUrl(rawUrl string) string {
 	return parsed.String()
 }
 
-func findRepositorySource(ctx context.Context, logger zerolog.Logger, repository repository.Repository, sourcesByPrefix *map[string]*vcs.Vcs, sourceMapping *map[string]repository.Repository) (*repositorySource, repositoryState, error) {
+func (this *syncContext) findRepositorySource(logger zerolog.Logger, repository repository.Repository) (*repositorySource, repositoryState, error) {
 	// Ensure labels are set correctly
 	desc := repository.GetDescription()
 
@@ -86,12 +74,14 @@ func findRepositorySource(ctx context.Context, logger zerolog.Logger, repository
 				parsedUrl.Path = ""
 				urlStr := parsedUrl.String()
 
-				host, found := (*sourcesByPrefix)[urlStr]
+				host, found := this.sourcesByPrefix[urlStr]
 				if found {
-					sourceLogger.Info().Str("source_host", (*host).GetConfig().Name).Msg("Found backup repository")
+					sourceLogger.Info().Str("source_host", host.GetConfig().Name).Msg("Found backup repository")
 
+					this.mtx.Lock()
 					// Record it in the source
-					(*sourceMapping)[sourceUrl] = repository
+					this.sourceMapping[sourceUrl] = repository
+					this.mtx.Unlock()
 
 					// We identified the source for this repository
 					return &repositorySource{
@@ -116,27 +106,27 @@ func findRepositorySource(ctx context.Context, logger zerolog.Logger, repository
 	return nil, state, nil
 }
 
-func ensureLabel(ctx context.Context, logger zerolog.Logger, repository repository.Repository, isBackup bool) error {
+func (state *syncContext) ensureLabel(logger zerolog.Logger, repository repository.Repository, isBackup bool) error {
 	// Ensure labels are set correctly
 	desc := repository.GetDescription()
 	if strings.HasPrefix(desc, constants.BACKUP_PREFIX) {
-		err := repository.AddLabel(ctx, constants.BACKUP_LABEL)
+		err := repository.AddLabel(state.ctx, constants.BACKUP_LABEL)
 		if err != nil {
 			return err
 		}
 
-		err = repository.RemoveLabel(ctx, constants.PRIVATE_LABEL)
+		err = repository.RemoveLabel(state.ctx, constants.PRIVATE_LABEL)
 		if err != nil {
 			return err
 		}
 
 	} else {
-		err := repository.AddLabel(ctx, constants.PRIVATE_LABEL)
+		err := repository.AddLabel(state.ctx, constants.PRIVATE_LABEL)
 		if err != nil {
 			return err
 		}
 
-		err = repository.RemoveLabel(ctx, constants.BACKUP_LABEL)
+		err = repository.RemoveLabel(state.ctx, constants.BACKUP_LABEL)
 		if err != nil {
 			return err
 		}
@@ -164,7 +154,7 @@ func mirrorRefs(logger zerolog.Logger, sourceRepo, destRepo repository.Repositor
 		return err
 	}
 
-	logger.Info().Str("clone_url", safeUrl(sourceCloneUrl)).Msg("Cloning source repository")
+	logger.Info().Str("path", dir).Str("clone_url", safeUrl(sourceCloneUrl)).Msg("Cloning source repository")
 	cloned, err := git.Clone(sourceCloneUrl, dir, options)
 	if err != nil {
 		return err
@@ -176,21 +166,15 @@ func mirrorRefs(logger zerolog.Logger, sourceRepo, destRepo repository.Repositor
 		return err
 	}
 
-	logger.Info().Str("clone_url", safeUrl(destCloneUrl)).Msg("Setting up destination remote")
-	err = cloned.Remotes.SetPushUrl("origin", destCloneUrl)
-	if err != nil {
-		return err
-	}
-
 	// Compute refspec to push
 	refspecs := []string{}
 
 	for _, k := range changedRefs {
-		refspecs = append(refspecs, k)
+		refspecs = append(refspecs, fmt.Sprintf("+%s:%s", k, k))
 	}
 
 	for _, k := range deletedRefs {
-		refspecs = append(refspecs, fmt.Sprintf(":%s", k))
+		refspecs = append(refspecs, fmt.Sprintf("+:%s", k))
 	}
 
 	logger.Info().
@@ -198,12 +182,23 @@ func mirrorRefs(logger zerolog.Logger, sourceRepo, destRepo repository.Repositor
 		Any("refspecs", refspecs).
 		Msg("Pushing to destination remote")
 
-	remote, err := cloned.Remotes.Lookup("origin")
+	remote, err := cloned.Remotes.Create("backup", destCloneUrl)
 	if err != nil {
 		return err
 	}
 
-	err = remote.Push(refspecs, &git.PushOptions{})
+	err = remote.Push(refspecs, &git.PushOptions{
+		RemoteCallbacks: git.RemoteCallbacks{
+			PushUpdateReferenceCallback: func(refname, status string) error {
+				logger.Info().Str("refname", refname).Msgf("Updated ref")
+				return nil
+			},
+			PushTransferProgressCallback: func(current, total uint32, bytes uint) error {
+				logger.Info().Msgf("Progress: %d/%d", current, total)
+				return nil
+			},
+		},
+	})
 	if err != nil {
 		return err
 	}
@@ -211,17 +206,17 @@ func mirrorRefs(logger zerolog.Logger, sourceRepo, destRepo repository.Repositor
 	return nil
 }
 
-func backupNewRepo(ctx context.Context, logger zerolog.Logger, dest vcs.Vcs, sourceRepo repository.Repository) error {
+func (state *syncContext) backupNewRepo(logger zerolog.Logger, dest vcs.Vcs, sourceRepo repository.Repository) error {
 	// Check the dry-run flag
-	dryRun := ctx.Value(constants.DRY_RUN).(bool)
+	dryRun := state.ctx.Value(constants.DRY_RUN).(bool)
 	if dryRun {
 		logger.Info().Msg("Would create the destination repository, but dry-run mode is enabled")
 		return nil
 	}
 
 	// Create the target repository
-	destRepo, err := dest.CreateRepository(ctx, &vcs.CreateRepositoryOptions{
-		Name: sourceRepo.GetName(),
+	destRepo, err := dest.CreateRepository(state.ctx, &vcs.CreateRepositoryOptions{
+		Name:        sourceRepo.GetName(),
 		Description: fmt.Sprintf("%s %s", constants.BACKUP_PREFIX, sourceRepo.GetUrl()),
 	})
 	if err != nil {
@@ -229,13 +224,13 @@ func backupNewRepo(ctx context.Context, logger zerolog.Logger, dest vcs.Vcs, sou
 	}
 
 	// Add tags to the repository
-	err = ensureLabel(ctx, logger, destRepo, true)
+	err = state.ensureLabel(logger, destRepo, true)
 	if err != nil {
 		return fmt.Errorf("Error ensuring labels: %w", err)
 	}
 
 	// Get all the refs in the source repo
-	sourceRefs, err := sourceRepo.ListRefs(ctx)
+	sourceRefs, err := sourceRepo.ListRefs(state.ctx)
 	if err != nil {
 		return fmt.Errorf("Failed getting source refs: %w", err)
 	}
@@ -249,15 +244,15 @@ func backupNewRepo(ctx context.Context, logger zerolog.Logger, dest vcs.Vcs, sou
 	return mirrorRefs(logger, sourceRepo, destRepo, allRefs, nil)
 }
 
-func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository.Repository, sourcesByPrefix *map[string]*vcs.Vcs, sourceMapping *map[string]repository.Repository) error {
+func (this *syncContext) processRepo(logger zerolog.Logger, destRepo repository.Repository) error {
 	// Identify the repository source
-	source, state, err := findRepositorySource(ctx, logger, destRepo, sourcesByPrefix, sourceMapping)
+	source, state, err := this.findRepositorySource(logger, destRepo)
 	if err != nil {
 		return err
 	}
 
 	// Ensure it's labeled correctly in the destination
-	err = ensureLabel(ctx, logger, destRepo, state.isBackup)
+	err = this.ensureLabel(logger, destRepo, state.isBackup)
 	if err != nil {
 		return err
 	}
@@ -273,7 +268,7 @@ func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository
 	}
 
 	// Try getting the source repository from the host
-	sourceRepo, err := (*source.host).GetRepositoryByUrl(ctx, source.source)
+	sourceRepo, err := source.host.GetRepositoryByUrl(this.ctx, source.source)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Failed getting repository from source host: %v", err))
 	}
@@ -282,13 +277,13 @@ func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository
 	deletedRefSet := map[string]struct{}{}
 
 	// Get the refs for the source repository
-	sourceRefs, err := (*sourceRepo).ListRefs(ctx)
+	sourceRefs, err := (*sourceRepo).ListRefs(this.ctx)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Failed getting source repository refs: %v", err))
 	}
 
 	// Get the refs for the destination repository
-	destRefs, err := destRepo.ListRefs(ctx)
+	destRefs, err := destRepo.ListRefs(this.ctx)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Failed getting destination repository refs: %v", err))
 	}
@@ -313,7 +308,7 @@ func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository
 				// The SHA of a ref changed, so we need to fetch the ref from its path
 				// since the change entry only contains the SHA change and not the full entry
 				i, _ := strconv.Atoi(change.Path[0])
-				name := destRefs[i].Name
+				name := destRefs[i].RefName
 
 				changedRefSet[name] = struct{}{}
 				// A ref that is changed was in fact, not deleted
@@ -344,7 +339,7 @@ func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository
 	}
 
 	// Check the dry-run flag
-	dryRun := ctx.Value(constants.DRY_RUN).(bool)
+	dryRun := this.ctx.Value(constants.DRY_RUN).(bool)
 	if dryRun {
 		logger.Info().Msg("Would synchronize the repositories, but dry-run mode is enabled")
 		return nil
