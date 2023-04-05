@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"gitr-backup/config"
@@ -10,6 +11,7 @@ import (
 	"gitr-backup/vcs/repository"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -192,17 +194,33 @@ func processRepo(ctx context.Context, logger zerolog.Logger, destRepo repository
 
 	if len(changelog) > 0 {
 		for _, change := range changelog {
-			name := change.From.(repository.Branch).RefName()
 			if change.Type == "delete" {
+				// In case of a deletion, the from field contains the entire ref
+				name := change.From.(repository.Branch).RefName()
+
 				_, found := changedRefSet[name]
 				// Only mark a branch as deleted if it wasn't changed already
 				if !found {
 					deletedRefSet[name] = struct{}{}
 				}
-			} else {
+			} else if change.Type == "update" {
+				// The SHA of a branch changed, so we need to fetch the branch from its path
+				// since the change entry only contains the SHA change and not the full entry
+				i, _ := strconv.Atoi(change.Path[0])
+				name := destBranches[i].Name
+
 				changedRefSet[name] = struct{}{}
 				// A branch that is changed was in fact, not deleted
 				delete(deletedRefSet, name)
+			} else if change.Type == "create" {
+				// On creation, the branch information is in the To field
+				name := change.To.(repository.Branch).RefName()
+
+				changedRefSet[name] = struct{}{}
+				// A branch that is changed was in fact, not deleted
+				delete(deletedRefSet, name)
+			} else {
+				log.Fatal().Any("change", change).Msg("Unknown change type")
 			}
 		}
 
