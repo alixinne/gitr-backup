@@ -7,7 +7,6 @@ import (
 	"gitr-backup/vcs"
 	"gitr-backup/vcs/repository"
 	"net/url"
-	"os"
 	"sync"
 	"sync/atomic"
 
@@ -91,7 +90,6 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 	}
 
 	wg.Wait()
-	os.Exit(1)
 
 	// For each source repository, upload it to the destination if there is no matching destination repository
 	for _, source := range state.clients {
