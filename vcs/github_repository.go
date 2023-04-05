@@ -103,3 +103,21 @@ func (repo *githubRepository) GetHttpsCloneUrl() (string, error) {
 func (repo *githubRepository) GetUrl() string {
 	return repo.repo.GetHTMLURL()
 }
+
+func (repo *githubRepository) GetDefaultBranch() string {
+	return repo.repo.GetDefaultBranch()
+}
+
+func (repo *githubRepository) SetDefaultBranch(ctx context.Context, branch string) error {
+	old := repo.repo.DefaultBranch
+	repo.repo.DefaultBranch = &branch
+
+	r, _, err := repo.host.client.Repositories.Edit(ctx, repo.repo.GetOwner().GetName(), repo.repo.GetName(), repo.repo)
+	if err != nil {
+		repo.repo.DefaultBranch = old
+		return err
+	}
+
+	repo.repo = r
+	return nil
+}

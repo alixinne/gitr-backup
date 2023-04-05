@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"gitr-backup/constants"
@@ -135,7 +136,7 @@ func (state *syncContext) ensureLabel(logger zerolog.Logger, repository reposito
 	return nil
 }
 
-func mirrorRefs(logger zerolog.Logger, sourceRepo, destRepo repository.Repository, changedRefs, deletedRefs []string) error {
+func mirrorRefs(ctx context.Context, logger zerolog.Logger, sourceRepo, destRepo repository.Repository, changedRefs, deletedRefs []string) error {
 	// Clone the remote repository
 	dir, err := os.MkdirTemp("", "gitr-backup")
 	if err != nil {
@@ -201,6 +202,16 @@ func mirrorRefs(logger zerolog.Logger, sourceRepo, destRepo repository.Repositor
 	})
 	if err != nil {
 		return err
+
+	expected := sourceRepo.GetDefaultBranch()
+	actual := destRepo.GetDefaultBranch()
+	if actual != expected{
+		logger.Info().Str("from", actual).Str("to", expected).Msg("Updating default branch")
+
+		err := destRepo.SetDefaultBranch(ctx, expected)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -241,7 +252,7 @@ func (state *syncContext) backupNewRepo(logger zerolog.Logger, dest vcs.Vcs, sou
 	}
 
 	// Clone the source to the destination
-	return mirrorRefs(logger, sourceRepo, destRepo, allRefs, nil)
+	return mirrorRefs(state.ctx, logger, sourceRepo, destRepo, allRefs, nil)
 }
 
 func (this *syncContext) processRepo(logger zerolog.Logger, destRepo repository.Repository) error {
@@ -345,5 +356,5 @@ func (this *syncContext) processRepo(logger zerolog.Logger, destRepo repository.
 		return nil
 	}
 
-	return mirrorRefs(logger, *sourceRepo, destRepo, maps.Keys(changedRefSet), maps.Keys(deletedRefSet))
+	return mirrorRefs(this.ctx, logger, *sourceRepo, destRepo, maps.Keys(changedRefSet), maps.Keys(deletedRefSet))
 }

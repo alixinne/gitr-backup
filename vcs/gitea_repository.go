@@ -223,3 +223,22 @@ func (repo *giteaRepository) GetHttpsCloneUrl() (string, error) {
 func (repo *giteaRepository) GetUrl() string {
 	return repo.repo.HTMLURL
 }
+
+func (repo *giteaRepository) GetDefaultBranch() string {
+	return repo.repo.DefaultBranch
+}
+
+func (repo *giteaRepository) SetDefaultBranch(ctx context.Context, branch string) error {
+	return repo.host.withContext(ctx, func(client *gitea.Client) error {
+		r, _, err := client.EditRepo(repo.repo.Owner.UserName, repo.repo.Name, gitea.EditRepoOption{
+			DefaultBranch: &branch,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		repo.repo = r
+		return nil
+	})
+}

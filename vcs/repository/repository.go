@@ -18,4 +18,6 @@ type Repository interface {
 	ListRefs(ctx context.Context) ([]Ref, error)
 	GetHttpsCloneUrl() (string, error)
 	GetUrl() string
+	GetDefaultBranch() string
+	SetDefaultBranch(ctx context.Context, branch string) error
 }
