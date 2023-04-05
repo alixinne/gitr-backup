@@ -188,20 +188,31 @@ func mirrorRefs(ctx context.Context, logger zerolog.Logger, sourceRepo, destRepo
 		return err
 	}
 
-	err = remote.Push(refspecs, &git.PushOptions{
-		RemoteCallbacks: git.RemoteCallbacks{
-			PushUpdateReferenceCallback: func(refname, status string) error {
-				logger.Info().Str("refname", refname).Msgf("Updated ref")
-				return nil
+	// Don't push all refspecs at once
+	rs := 100
+	for i := 0; i < len(refspecs); i += rs {
+		j := i + rs
+		if j > len(refspecs) {
+			j = len(refspecs)
+		}
+
+		window := refspecs[i:j]
+		err = remote.Push(window, &git.PushOptions{
+			RemoteCallbacks: git.RemoteCallbacks{
+				PushUpdateReferenceCallback: func(refname, status string) error {
+					logger.Info().Str("refname", refname).Msgf("Updated ref")
+					return nil
+				},
+				PushTransferProgressCallback: func(current, total uint32, bytes uint) error {
+					logger.Info().Msgf("Progress: %d/%d", current, total)
+					return nil
+				},
 			},
-			PushTransferProgressCallback: func(current, total uint32, bytes uint) error {
-				logger.Info().Msgf("Progress: %d/%d", current, total)
-				return nil
-			},
-		},
-	})
-	if err != nil {
-		return err
+		})
+		if err != nil {
+			return err
+		}
+	}
 
 	expected := sourceRepo.GetDefaultBranch()
 	actual := destRepo.GetDefaultBranch()
