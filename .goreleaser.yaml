@@ -37,9 +37,9 @@ changelog:
 
 dockers:
   - image_templates:
-    - vtavernier/gitr-backup:latest
-    - vtavernier/gitr-backup:{{ .Major }}
-    - vtavernier/gitr-backup:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+    - ghcr.io/vtavernier/gitr-backup:latest
+    - ghcr.io/vtavernier/gitr-backup:{{ .Major }}
+    - ghcr.io/vtavernier/gitr-backup:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
 
     build_flag_templates:
     - "--pull"
