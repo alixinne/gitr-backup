@@ -144,7 +144,14 @@ func (repo *giteaRepository) ListRefs(ctx context.Context) ([]repository.Ref, er
 	}
 
 	for {
-		refs, resp, err := repo.host.client.ListRepoBranches(repo.repo.Owner.UserName, repo.repo.Name, options)
+		var refs []*gitea.Branch
+		var resp *gitea.Response
+		err := repo.host.withContext(ctx, func(client *gitea.Client) error {
+			var err error
+			refs, resp, err = client.ListRepoBranches(repo.repo.Owner.UserName, repo.repo.Name, options)
+			return err
+		})
+
 		if err != nil {
 			return nil, err
 		}
@@ -180,7 +187,14 @@ func (repo *giteaRepository) ListRefs(ctx context.Context) ([]repository.Ref, er
 	baseCount := len(allRefs)
 
 	for {
-		refs, resp, err := repo.host.client.ListRepoTags(repo.repo.Owner.UserName, repo.repo.Name, tagOptions)
+		var refs []*gitea.Tag
+		var resp *gitea.Response
+		err := repo.host.withContext(ctx, func(client *gitea.Client) error {
+			var err error
+			refs, resp, err = client.ListRepoTags(repo.repo.Owner.UserName, repo.repo.Name, tagOptions)
+			return err
+		})
+
 		if err != nil {
 			return nil, err
 		}
