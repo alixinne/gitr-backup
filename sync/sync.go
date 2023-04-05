@@ -65,7 +65,6 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 	}
 
 	var errCount int32 = 0
-	sourceMapping := make(map[string]repository.Repository)
 
 	// TODO: Make this configurable
 	sem := semaphore.NewWeighted(1)
@@ -119,7 +118,7 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 				logger := logger.With().Str("repository", sourceRepo.GetName()).Logger()
 
 				url := sourceRepo.GetUrl()
-				_, found := sourceMapping[url]
+				_, found := state.sourceMapping[url]
 
 				if !found {
 					logger.Info().Msg("Not found in backup, creating")
