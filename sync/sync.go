@@ -135,7 +135,7 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 	wg.Wait()
 
 	if errCount > 0 {
-		return errors.New("Some repositories failed")
+		return errors.New("some repositories failed")
 	}
 
 	return nil
@@ -170,7 +170,7 @@ func SyncHosts(ctx context.Context, config *config.Config) error {
 	}
 
 	if errCount > 0 {
-		return errors.New("Some destinations have failed")
+		return errors.New("some destinations have failed")
 	}
 
 	return nil

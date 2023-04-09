@@ -2,7 +2,6 @@ package vcs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"gitr-backup/config"
 	"gitr-backup/vcs/repository"
@@ -35,7 +34,7 @@ func LoadClients(ctx context.Context, config *config.Config) ([]Vcs, error) {
 		} else if host.Type == "github" {
 			client, err = NewGitHubClient(ctx, host)
 		} else {
-			err = errors.New(fmt.Sprintf("Unsupported host type: %s", host.Type))
+			err = fmt.Errorf("unsupported host type: %s", host.Type)
 		}
 
 		if err != nil {
