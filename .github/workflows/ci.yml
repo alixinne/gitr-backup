@@ -1,0 +1,19 @@
+name: ci
+
+on:
+  pull_request: {}
+  push:
+    branches:
+      - master
+    tags-ignore:
+      - '**'
+
+jobs:
+  build:
+    uses: vtavernier/github-workflows/.github/workflows/build-go-docker.yml@v1
+    with:
+      submodules: recursive
+      build_tags: static
+    secrets:
+      docker_password: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}

@@ -1,0 +1,30 @@
+version: '3'
+
+vars:
+  BUILD_FLAGS: -tags static
+
+tasks:
+  build-git2go:
+    cmds:
+      - make -C git2go install-static
+    status:
+      - test -f git2go/static-build/install/lib/libgit2.a
+
+  build:
+    deps: [build-git2go]
+    cmds:
+      - go build -v {{.BUILD_FLAGS}}
+
+  gofmt:
+    cmds:
+      - "! gofmt -s -l . | grep -v '^git2go' | grep ."
+
+  vet:
+    deps: [build-git2go]
+    cmds:
+      - go vet {{.BUILD_FLAGS}}
+
+  test:
+    deps: [build-git2go]
+    cmds:
+      - go test {{.BUILD_FLAGS}} ./...
