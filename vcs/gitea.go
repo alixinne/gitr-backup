@@ -41,25 +41,25 @@ func NewGiteaClient(ctx context.Context, config config.Host) (*Gitea, error) {
 	return &Gitea{config: &config, client: client, mutex: &sync.Mutex{}, username: username, initialContext: ctx}, nil
 }
 
-func (this *Gitea) withContext(ctx context.Context, cb func(client *gitea.Client) error) error {
+func (giteaClient *Gitea) withContext(ctx context.Context, cb func(client *gitea.Client) error) error {
 	// We need the mutex to protect against setting the default context for the current request
-	this.mutex.Lock()
+	giteaClient.mutex.Lock()
 
-	this.client.SetContext(ctx)
-	err := cb(this.client)
-	this.client.SetContext(this.initialContext)
+	giteaClient.client.SetContext(ctx)
+	err := cb(giteaClient.client)
+	giteaClient.client.SetContext(giteaClient.initialContext)
 
-	this.mutex.Unlock()
+	giteaClient.mutex.Unlock()
 
 	return err
 }
 
-func (this *Gitea) GetConfig() *config.Host {
-	return this.config
+func (giteaClient *Gitea) GetConfig() *config.Host {
+	return giteaClient.config
 }
 
-func (this *Gitea) GetRepositories(ctx context.Context) ([]repository.Repository, error) {
-	logger := log.With().Str("host", this.config.Name).Logger()
+func (giteaClient *Gitea) GetRepositories(ctx context.Context) ([]repository.Repository, error) {
+	logger := log.With().Str("host", giteaClient.config.Name).Logger()
 
 	allRepos := []repository.Repository{}
 	options := gitea.ListReposOptions{
@@ -73,7 +73,7 @@ func (this *Gitea) GetRepositories(ctx context.Context) ([]repository.Repository
 		var repos []*gitea.Repository
 		var resp *gitea.Response
 
-		err := this.withContext(ctx, func(client *gitea.Client) error {
+		err := giteaClient.withContext(ctx, func(client *gitea.Client) error {
 			var err error
 			repos, resp, err = client.ListMyRepos(options)
 			return err
@@ -86,7 +86,7 @@ func (this *Gitea) GetRepositories(ctx context.Context) ([]repository.Repository
 		for _, repo := range repos {
 			logger.Debug().Msgf("Found repository: %s (%s)", repo.Name, repo.Description)
 			allRepos = append(allRepos, &giteaRepository{
-				host: this,
+				host: giteaClient,
 				repo: repo,
 			})
 		}
@@ -106,13 +106,13 @@ func (this *Gitea) GetRepositories(ctx context.Context) ([]repository.Repository
 	return allRepos, nil
 }
 
-func (this *Gitea) GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, error) {
+func (giteaClient *Gitea) GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (this *Gitea) CreateRepository(ctx context.Context, options *CreateRepositoryOptions) (repository.Repository, error) {
+func (giteaClient *Gitea) CreateRepository(ctx context.Context, options *CreateRepositoryOptions) (repository.Repository, error) {
 	var repo *gitea.Repository
-	err := this.withContext(ctx, func(client *gitea.Client) error {
+	err := giteaClient.withContext(ctx, func(client *gitea.Client) error {
 		var err error
 		repo, _, err = client.CreateRepo(gitea.CreateRepoOption{
 			Name:        options.Name,
@@ -126,7 +126,7 @@ func (this *Gitea) CreateRepository(ctx context.Context, options *CreateReposito
 	}
 
 	return &giteaRepository{
-		host: this,
+		host: giteaClient,
 		repo: repo,
 	}, nil
 }

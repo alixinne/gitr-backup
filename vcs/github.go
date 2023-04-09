@@ -41,12 +41,12 @@ func NewGitHubClient(ctx context.Context, config config.Host) (*GitHub, error) {
 	return &GitHub{config: &config, client: client, username: username}, nil
 }
 
-func (this *GitHub) GetConfig() *config.Host {
-	return this.config
+func (githubClient *GitHub) GetConfig() *config.Host {
+	return githubClient.config
 }
 
-func (this *GitHub) GetRepositories(ctx context.Context) ([]repository.Repository, error) {
-	logger := log.With().Str("host", this.config.Name).Logger()
+func (githubClient *GitHub) GetRepositories(ctx context.Context) ([]repository.Repository, error) {
+	logger := log.With().Str("host", githubClient.config.Name).Logger()
 
 	allRepos := []repository.Repository{}
 	options := &github.RepositoryListOptions{
@@ -56,7 +56,7 @@ func (this *GitHub) GetRepositories(ctx context.Context) ([]repository.Repositor
 	}
 
 	for {
-		repos, resp, err := this.client.Repositories.List(ctx, this.username, options)
+		repos, resp, err := githubClient.client.Repositories.List(ctx, githubClient.username, options)
 		if err != nil {
 			return nil, err
 		}
@@ -64,7 +64,7 @@ func (this *GitHub) GetRepositories(ctx context.Context) ([]repository.Repositor
 		for _, repo := range repos {
 			logger.Debug().Msgf("Found repository: %s (%s)", repo.GetName(), repo.GetDescription())
 			allRepos = append(allRepos, &githubRepository{
-				host: this,
+				host: githubClient,
 				repo: repo,
 			})
 		}
@@ -79,27 +79,27 @@ func (this *GitHub) GetRepositories(ctx context.Context) ([]repository.Repositor
 	return allRepos, nil
 }
 
-func (this *GitHub) GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, error) {
-	repositoryParts := strings.SplitN(strings.TrimLeft(strings.TrimPrefix(url, this.config.BaseUrl), "/"), "/", 3)
+func (githubClient *GitHub) GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, error) {
+	repositoryParts := strings.SplitN(strings.TrimLeft(strings.TrimPrefix(url, githubClient.config.BaseUrl), "/"), "/", 3)
 	if len(repositoryParts) != 2 {
-		return nil, errors.New("Invalid repository url for this host")
+		return nil, errors.New("invalid repository url for this host")
 	}
 
-	repo, _, err := this.client.Repositories.Get(ctx, repositoryParts[0], repositoryParts[1])
+	repo, _, err := githubClient.client.Repositories.Get(ctx, repositoryParts[0], repositoryParts[1])
 	if err != nil {
 		return nil, err
 	}
 
 	var ghRepo repository.Repository = &githubRepository{
-		host: this,
+		host: githubClient,
 		repo: repo,
 	}
 
 	return &ghRepo, nil
 }
 
-func (this *GitHub) CreateRepository(ctx context.Context, options *CreateRepositoryOptions) (repository.Repository, error) {
-	repo, _, err := this.client.Repositories.Create(ctx, "", &github.Repository{
+func (githubClient *GitHub) CreateRepository(ctx context.Context, options *CreateRepositoryOptions) (repository.Repository, error) {
+	repo, _, err := githubClient.client.Repositories.Create(ctx, "", &github.Repository{
 		Name:        &options.Name,
 		Description: &options.Description,
 	})
@@ -109,7 +109,7 @@ func (this *GitHub) CreateRepository(ctx context.Context, options *CreateReposit
 	}
 
 	return &githubRepository{
-		host: this,
+		host: githubClient,
 		repo: repo,
 	}, nil
 }

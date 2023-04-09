@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -45,7 +44,7 @@ func readEnvVar(logger zerolog.Logger, val *string) error {
 			logger.Debug().Msgf("Looked up value from %s", *val)
 			*val = value
 		} else {
-			return errors.New(fmt.Sprintf("Missing environment variable %s", *val))
+			return fmt.Errorf("missing environment variable %s", *val)
 		}
 	}
 
@@ -56,11 +55,11 @@ func (host *Host) massageConfig(i int) error {
 	logger := log.With().Int("host", i).Logger()
 
 	if host.Type == "" {
-		return errors.New(fmt.Sprintf("Missing host type: %s", host.Type))
+		return fmt.Errorf("missing host type: %s", host.Type)
 	}
 
 	if host.Type != "github" && host.Type != "gitea" {
-		return errors.New(fmt.Sprintf("Invalid host type: %s", host.Type))
+		return fmt.Errorf("invalid host type: %s", host.Type)
 	}
 
 	if host.Type == "github" {
@@ -69,7 +68,7 @@ func (host *Host) massageConfig(i int) error {
 		}
 	} else if host.Type == "gitea" {
 		if host.BaseUrl == "" {
-			return errors.New("A base url is required for a gitea host")
+			return errors.New("a base url is required for a gitea host")
 		}
 	}
 
@@ -79,7 +78,7 @@ func (host *Host) massageConfig(i int) error {
 	}
 
 	if host.Token == "" {
-		return errors.New("Missing token for authentication")
+		return errors.New("missing token for authentication")
 	}
 
 	err := readEnvVar(logger, &host.Token)
@@ -96,7 +95,7 @@ func (host *Host) massageConfig(i int) error {
 }
 
 func LoadConfig(path string) (*Config, error) {
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

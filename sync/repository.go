@@ -2,7 +2,6 @@ package sync
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"gitr-backup/constants"
 	"gitr-backup/vcs"
@@ -53,7 +52,7 @@ func safeUrl(rawUrl string) string {
 	return parsed.String()
 }
 
-func (this *syncContext) findRepositorySource(logger zerolog.Logger, repository repository.Repository) (*repositorySource, repositoryState, error) {
+func (syncCtx *syncContext) findRepositorySource(logger zerolog.Logger, repository repository.Repository) (*repositorySource, repositoryState, error) {
 	// Ensure labels are set correctly
 	desc := repository.GetDescription()
 
@@ -75,14 +74,14 @@ func (this *syncContext) findRepositorySource(logger zerolog.Logger, repository 
 				parsedUrl.Path = ""
 				urlStr := parsedUrl.String()
 
-				host, found := this.sourcesByPrefix[urlStr]
+				host, found := syncCtx.sourcesByPrefix[urlStr]
 				if found {
 					sourceLogger.Info().Str("source_host", host.GetConfig().Name).Msg("Found backup repository")
 
-					this.mtx.Lock()
+					syncCtx.mtx.Lock()
 					// Record it in the source
-					this.sourceMapping[sourceUrl] = repository
-					this.mtx.Unlock()
+					syncCtx.sourceMapping[sourceUrl] = repository
+					syncCtx.mtx.Unlock()
 
 					// We identified the source for this repository
 					return &repositorySource{
@@ -242,19 +241,19 @@ func (state *syncContext) backupNewRepo(logger zerolog.Logger, dest vcs.Vcs, sou
 		Description: fmt.Sprintf("%s %s", constants.BACKUP_PREFIX, sourceRepo.GetUrl()),
 	})
 	if err != nil {
-		return fmt.Errorf("Failed creating repository: %w", err)
+		return fmt.Errorf("failed creating repository: %w", err)
 	}
 
 	// Add tags to the repository
 	err = state.ensureLabel(logger, destRepo, true)
 	if err != nil {
-		return fmt.Errorf("Error ensuring labels: %w", err)
+		return fmt.Errorf("error ensuring labels: %w", err)
 	}
 
 	// Get all the refs in the source repo
 	sourceRefs, err := sourceRepo.ListRefs(state.ctx)
 	if err != nil {
-		return fmt.Errorf("Failed getting source refs: %w", err)
+		return fmt.Errorf("failed getting source refs: %w", err)
 	}
 
 	allRefs := []string{}
@@ -266,15 +265,15 @@ func (state *syncContext) backupNewRepo(logger zerolog.Logger, dest vcs.Vcs, sou
 	return mirrorRefs(state.ctx, logger, sourceRepo, destRepo, allRefs, nil)
 }
 
-func (this *syncContext) processRepo(logger zerolog.Logger, destRepo repository.Repository) error {
+func (syncCtx *syncContext) processRepo(logger zerolog.Logger, destRepo repository.Repository) error {
 	// Identify the repository source
-	source, state, err := this.findRepositorySource(logger, destRepo)
+	source, state, err := syncCtx.findRepositorySource(logger, destRepo)
 	if err != nil {
 		return err
 	}
 
 	// Ensure it's labeled correctly in the destination
-	err = this.ensureLabel(logger, destRepo, state.isBackup)
+	err = syncCtx.ensureLabel(logger, destRepo, state.isBackup)
 	if err != nil {
 		return err
 	}
@@ -290,29 +289,29 @@ func (this *syncContext) processRepo(logger zerolog.Logger, destRepo repository.
 	}
 
 	// Try getting the source repository from the host
-	sourceRepo, err := source.host.GetRepositoryByUrl(this.ctx, source.source)
+	sourceRepo, err := source.host.GetRepositoryByUrl(syncCtx.ctx, source.source)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Failed getting repository from source host: %v", err))
+		return fmt.Errorf("failed getting repository from source host: %w", err)
 	}
 
 	changedRefSet := map[string]struct{}{}
 	deletedRefSet := map[string]struct{}{}
 
 	// Get the refs for the source repository
-	sourceRefs, err := (*sourceRepo).ListRefs(this.ctx)
+	sourceRefs, err := (*sourceRepo).ListRefs(syncCtx.ctx)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Failed getting source repository refs: %v", err))
+		return fmt.Errorf("failed getting source repository refs: %w", err)
 	}
 
 	// Get the refs for the destination repository
-	destRefs, err := destRepo.ListRefs(this.ctx)
+	destRefs, err := destRepo.ListRefs(syncCtx.ctx)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Failed getting destination repository refs: %v", err))
+		return fmt.Errorf("failed getting destination repository refs: %w", err)
 	}
 
 	changelog, err := diff.Diff(destRefs, sourceRefs, diff.DisableStructValues())
 	if err != nil {
-		return errors.New(fmt.Sprintf("Comparison error: %v", err))
+		return fmt.Errorf("comparison error: %w", err)
 	}
 
 	if len(changelog) > 0 {
@@ -369,11 +368,11 @@ func (this *syncContext) processRepo(logger zerolog.Logger, destRepo repository.
 	}
 
 	// Check the dry-run flag
-	dryRun := this.ctx.Value(constants.DRY_RUN).(bool)
+	dryRun := syncCtx.ctx.Value(constants.DRY_RUN).(bool)
 	if dryRun {
 		logger.Info().Msg("Would synchronize the repositories, but dry-run mode is enabled")
 		return nil
 	}
 
-	return mirrorRefs(this.ctx, logger, *sourceRepo, destRepo, maps.Keys(changedRefSet), maps.Keys(deletedRefSet))
+	return mirrorRefs(syncCtx.ctx, logger, *sourceRepo, destRepo, maps.Keys(changedRefSet), maps.Keys(deletedRefSet))
 }
