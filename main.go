@@ -1,6 +1,5 @@
 /*
 Copyright © 2023 Vincent Tavernier <v.tavernier@pm.me>
-
 */
 package main
 

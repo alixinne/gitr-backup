@@ -216,7 +216,7 @@ func mirrorRefs(ctx context.Context, logger zerolog.Logger, sourceRepo, destRepo
 
 	expected := sourceRepo.GetDefaultBranch()
 	actual := destRepo.GetDefaultBranch()
-	if actual != expected{
+	if actual != expected {
 		logger.Info().Str("from", actual).Str("to", expected).Msg("Updating default branch")
 
 		err := destRepo.SetDefaultBranch(ctx, expected)

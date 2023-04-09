@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-
 type giteaRepository struct {
 	host              *Gitea
 	repo              *gitea.Repository
@@ -56,7 +55,7 @@ func (repo *giteaRepository) ensureTopics(ctx context.Context) error {
 
 		repo.topicsInitialized = true
 	}
-	
+
 	return nil
 }
 
@@ -138,7 +137,7 @@ func (repo *giteaRepository) ListRefs(ctx context.Context) ([]repository.Ref, er
 	// List branches
 	options := gitea.ListRepoBranchesOptions{
 		ListOptions: gitea.ListOptions{
-			Page: 1,
+			Page:     1,
 			PageSize: 50,
 		},
 	}
@@ -158,8 +157,8 @@ func (repo *giteaRepository) ListRefs(ctx context.Context) ([]repository.Ref, er
 
 		for _, ref := range refs {
 			allRefs = append(allRefs, repository.Ref{
-				Name: ref.Name,
-				Sha: ref.Commit.ID,
+				Name:    ref.Name,
+				Sha:     ref.Commit.ID,
 				RefName: fmt.Sprintf("refs/heads/%s", ref.Name),
 			})
 		}
@@ -179,7 +178,7 @@ func (repo *giteaRepository) ListRefs(ctx context.Context) ([]repository.Ref, er
 	// List tags
 	tagOptions := gitea.ListRepoTagsOptions{
 		ListOptions: gitea.ListOptions{
-			Page: 1,
+			Page:     1,
 			PageSize: 50,
 		},
 	}
@@ -201,8 +200,8 @@ func (repo *giteaRepository) ListRefs(ctx context.Context) ([]repository.Ref, er
 
 		for _, ref := range refs {
 			allRefs = append(allRefs, repository.Ref{
-				Name: ref.Name,
-				Sha: ref.Commit.SHA,
+				Name:    ref.Name,
+				Sha:     ref.Commit.SHA,
 				RefName: fmt.Sprintf("refs/tags/%s", ref.Name),
 			})
 		}
@@ -212,13 +211,12 @@ func (repo *giteaRepository) ListRefs(ctx context.Context) ([]repository.Ref, er
 			return nil, err
 		}
 
-		if totalCount <= len(allRefs) - baseCount {
+		if totalCount <= len(allRefs)-baseCount {
 			break
 		}
 
 		tagOptions.ListOptions.Page += 1
 	}
-
 
 	return allRefs, nil
 }

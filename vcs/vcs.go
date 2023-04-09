@@ -12,7 +12,7 @@ import (
 )
 
 type CreateRepositoryOptions struct {
-	Name string
+	Name        string
 	Description string
 }
 
