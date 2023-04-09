@@ -15,11 +15,11 @@ import (
 )
 
 type syncContext struct {
-	ctx context.Context
-	clients []vcs.Vcs
+	ctx             context.Context
+	clients         []vcs.Vcs
 	sourcesByPrefix map[string]vcs.Vcs
-	sourceMapping map[string]repository.Repository
-	mtx sync.Mutex
+	sourceMapping   map[string]repository.Repository
+	mtx             sync.Mutex
 }
 
 func newSyncContext(ctx context.Context, clients []vcs.Vcs) (*syncContext, error) {
@@ -46,11 +46,11 @@ func newSyncContext(ctx context.Context, clients []vcs.Vcs) (*syncContext, error
 	}
 
 	return &syncContext{
-		ctx: ctx,
-		clients: clients,
+		ctx:             ctx,
+		clients:         clients,
 		sourcesByPrefix: prefixClients,
-		sourceMapping: map[string]repository.Repository{},
-		mtx: sync.Mutex{},
+		sourceMapping:   map[string]repository.Repository{},
+		mtx:             sync.Mutex{},
 	}, nil
 }
 
