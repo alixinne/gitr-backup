@@ -8,14 +8,9 @@ import (
 	"gitr-backup/vcs/repository"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"golang.org/x/exp/maps"
-
-	"github.com/r3labs/diff/v3"
 
 	git "github.com/libgit2/git2go/v34"
 )
@@ -135,7 +130,7 @@ func (state *syncContext) ensureLabel(logger zerolog.Logger, repository reposito
 	return nil
 }
 
-func mirrorRefs(ctx context.Context, logger zerolog.Logger, sourceRepo, destRepo repository.Repository, changedRefs, deletedRefs []string) error {
+func mirrorRefs(ctx context.Context, logger zerolog.Logger, sourceRepo, destRepo repository.Repository, changelog RefdiffResult) error {
 	// Clone the remote repository
 	dir, err := os.MkdirTemp("", "gitr-backup")
 	if err != nil {
@@ -169,12 +164,12 @@ func mirrorRefs(ctx context.Context, logger zerolog.Logger, sourceRepo, destRepo
 	// Compute refspec to push
 	refspecs := []string{}
 
-	for _, k := range changedRefs {
-		refspecs = append(refspecs, fmt.Sprintf("+%s:%s", k, k))
+	for _, k := range changelog.ChangedRefs {
+		refspecs = append(refspecs, fmt.Sprintf("+%s:%s", k.RefName, k.RefName))
 	}
 
-	for _, k := range deletedRefs {
-		refspecs = append(refspecs, fmt.Sprintf("+:%s", k))
+	for _, k := range changelog.DeletedRefs {
+		refspecs = append(refspecs, fmt.Sprintf("+:%s", k.RefName))
 	}
 
 	logger.Info().
@@ -256,13 +251,8 @@ func (state *syncContext) backupNewRepo(logger zerolog.Logger, dest vcs.Vcs, sou
 		return fmt.Errorf("failed getting source refs: %w", err)
 	}
 
-	allRefs := []string{}
-	for _, ref := range sourceRefs {
-		allRefs = append(allRefs, ref.RefName)
-	}
-
 	// Clone the source to the destination
-	return mirrorRefs(state.ctx, logger, sourceRepo, destRepo, allRefs, nil)
+	return mirrorRefs(state.ctx, logger, sourceRepo, destRepo, FullRefdiff(sourceRefs))
 }
 
 func (syncCtx *syncContext) processRepo(logger zerolog.Logger, destRepo repository.Repository) error {
@@ -294,9 +284,6 @@ func (syncCtx *syncContext) processRepo(logger zerolog.Logger, destRepo reposito
 		return fmt.Errorf("failed getting repository from source host: %w", err)
 	}
 
-	changedRefSet := map[string]struct{}{}
-	deletedRefSet := map[string]struct{}{}
-
 	// Get the refs for the source repository
 	sourceRefs, err := (*sourceRepo).ListRefs(syncCtx.ctx)
 	if err != nil {
@@ -309,61 +296,13 @@ func (syncCtx *syncContext) processRepo(logger zerolog.Logger, destRepo reposito
 		return fmt.Errorf("failed getting destination repository refs: %w", err)
 	}
 
-	changelog, err := diff.Diff(destRefs, sourceRefs, diff.DisableStructValues())
-	if err != nil {
-		return fmt.Errorf("comparison error: %w", err)
-	}
-
-	if len(changelog) > 0 {
-		for _, change := range changelog {
-			if change.Type == "delete" {
-				// In case of a deletion, the from field contains the entire ref
-				name := change.From.(repository.Ref).RefName
-
-				_, found := changedRefSet[name]
-				// Only mark a ref as deleted if it wasn't changed already
-				if !found {
-					deletedRefSet[name] = struct{}{}
-				}
-			} else if change.Type == "update" {
-				if change.Path[1] == "sha" {
-					// The SHA of a ref changed, so we need to fetch the ref from its path
-					// since the change entry only contains the SHA change and not the full entry
-					i, _ := strconv.Atoi(change.Path[0])
-					name := sourceRefs[i].RefName
-
-					changedRefSet[name] = struct{}{}
-				} else {
-					// The name of a branch changed, this means a branch was renamed
-					i, _ := strconv.Atoi(change.Path[0])
-					from := destRefs[i].RefName
-					to := sourceRefs[i].RefName
-
-					deletedRefSet[from] = struct{}{}
-					changedRefSet[to] = struct{}{}
-				}
-			} else if change.Type == "create" {
-				// On creation, the ref information is in the To field
-				name := change.To.(repository.Ref).RefName
-
-				changedRefSet[name] = struct{}{}
-				// A ref that is changed was in fact, not deleted
-				delete(deletedRefSet, name)
-			} else {
-				log.Fatal().Any("change", change).Msg("Unknown change type")
-			}
-		}
-
+	changelog := Refdiff(sourceRefs, destRefs)
+	if changelog.Len() > 0 {
 		logger.Info().
 			Any("changelog", changelog).
-			Any("changed", changedRefSet).
-			Any("deleted", deletedRefSet).
 			Msg("Differences found")
 	} else {
 		logger.Debug().Msg("No changes found in refs")
-	}
-
-	if len(changedRefSet) == 0 && len(deletedRefSet) == 0 {
 		return nil
 	}
 
@@ -374,5 +313,5 @@ func (syncCtx *syncContext) processRepo(logger zerolog.Logger, destRepo reposito
 		return nil
 	}
 
-	return mirrorRefs(syncCtx.ctx, logger, *sourceRepo, destRepo, maps.Keys(changedRefSet), maps.Keys(deletedRefSet))
+	return mirrorRefs(syncCtx.ctx, logger, *sourceRepo, destRepo, changelog)
 }
