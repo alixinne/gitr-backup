@@ -40,7 +40,7 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatal().Err(err).Send()
 	}
 
-	err = sync.SyncHosts(ctx, config)
+	err = sync.SyncHosts(ctx, config, args)
 	if err != nil {
 		log.Fatal().Err(err).Send()
 	}

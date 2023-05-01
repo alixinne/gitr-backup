@@ -54,7 +54,7 @@ func newSyncContext(ctx context.Context, clients []vcs.Vcs) (*syncContext, error
 	}, nil
 }
 
-func (state *syncContext) processDestination(destination vcs.Vcs) error {
+func (state *syncContext) processDestination(destination vcs.Vcs, names []string) error {
 	logger := vcs.GetLogger(destination)
 
 	logger.Info().Msg("Analyzing state of destination")
@@ -65,6 +65,12 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 	}
 
 	var errCount int32 = 0
+
+	// Build repository filter
+	repositories := map[string]struct{}{}
+	for _, name := range names {
+		repositories[name] = struct{}{}
+	}
 
 	// TODO: Make this configurable
 	sem := semaphore.NewWeighted(1)
@@ -81,6 +87,12 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 				logger.Fatal().Err(err).Send()
 			}
 			defer sem.Release(1)
+
+			if len(repositories) > 0 {
+				if _, ok := repositories[destRepo.GetName()]; !ok {
+					return
+				}
+			}
 
 			logger := logger.With().Str("repository", destRepo.GetName()).Logger()
 
@@ -123,6 +135,12 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 				}
 				defer sem.Release(1)
 
+				if len(repositories) > 0 {
+					if _, ok := repositories[sourceRepo.GetName()]; !ok {
+						return
+					}
+				}
+
 				logger := logger.With().Str("repository", sourceRepo.GetName()).Logger()
 
 				url := sourceRepo.GetUrl()
@@ -149,7 +167,7 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 	return nil
 }
 
-func SyncHosts(ctx context.Context, config *config.Config) error {
+func SyncHosts(ctx context.Context, config *config.Config, names []string) error {
 	log.Info().Msgf("%d hosts configured", len(config.Hosts))
 
 	clients, err := vcs.LoadClients(ctx, config)
@@ -170,7 +188,7 @@ func SyncHosts(ctx context.Context, config *config.Config) error {
 			continue
 		}
 
-		err := state.processDestination(destination)
+		err := state.processDestination(destination, names)
 		if err != nil {
 			log.Error().Err(err).Str("host", destination.GetConfig().Name).Msg("Failed processing destination")
 			errCount += 1
