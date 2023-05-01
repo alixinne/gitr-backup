@@ -15,14 +15,13 @@ tasks:
     cmds:
       - go build -v {{.BUILD_FLAGS}}
 
-  gofmt:
-    cmds:
-      - "! gofmt -s -l . | grep -v '^git2go' | grep ."
-
-  vet:
+  pre-lint:
     deps: [build-git2go]
+
+  lint:
+    deps: [pre-lint]
     cmds:
-      - go vet {{.BUILD_FLAGS}}
+      - golangci-lint run
 
   test:
     deps: [build-git2go]

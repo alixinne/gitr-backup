@@ -1,0 +1,7 @@
+run:
+  build-tags:
+    - static
+
+linters-settings:
+  gofmt:
+    enabled: true
