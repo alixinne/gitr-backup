@@ -74,13 +74,17 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 	// For each known destination repository, try to update it from the source
 	for _, destRepo := range repos {
 		go func(destRepo repository.Repository) {
-			sem.Acquire(state.ctx, 1)
-			defer sem.Release(1)
 			defer wg.Done()
+
+			err := sem.Acquire(state.ctx, 1)
+			if err != nil {
+				logger.Fatal().Err(err).Send()
+			}
+			defer sem.Release(1)
 
 			logger := logger.With().Str("repository", destRepo.GetName()).Logger()
 
-			err := state.processRepo(logger, destRepo)
+			err = state.processRepo(logger, destRepo)
 			if err != nil {
 				logger.Error().Err(err).Send()
 				atomic.AddInt32(&errCount, 1)
@@ -111,9 +115,13 @@ func (state *syncContext) processDestination(destination vcs.Vcs) error {
 
 		for _, sourceRepo := range sourceRepos {
 			go func(sourceRepo repository.Repository) {
-				sem.Acquire(state.ctx, 1)
-				defer sem.Release(1)
 				defer wg.Done()
+
+				err := sem.Acquire(state.ctx, 1)
+				if err != nil {
+					logger.Fatal().Err(err).Send()
+				}
+				defer sem.Release(1)
 
 				logger := logger.With().Str("repository", sourceRepo.GetName()).Logger()
 
