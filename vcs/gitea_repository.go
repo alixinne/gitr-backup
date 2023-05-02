@@ -7,6 +7,7 @@ import (
 	"gitr-backup/vcs/repository"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"code.gitea.io/sdk/gitea"
 	"github.com/rs/zerolog"
@@ -199,10 +200,11 @@ func (repo *giteaRepository) ListRefs(ctx context.Context) ([]repository.Ref, er
 		}
 
 		for _, ref := range refs {
+			name := strings.TrimPrefix(ref.Name, "tags/")
 			allRefs = append(allRefs, repository.Ref{
-				Name:    ref.Name,
+				Name:    name,
 				Sha:     ref.Commit.SHA,
-				RefName: fmt.Sprintf("refs/tags/%s", ref.Name),
+				RefName: fmt.Sprintf("refs/tags/%s", name),
 			})
 		}
 
