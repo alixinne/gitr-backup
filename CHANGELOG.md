@@ -1,3 +1,15 @@
+# [0.3.0](https://github.com/vtavernier/gitr-backup/compare/v0.2.1...v0.3.0) (2023-05-02)
+
+
+### Bug Fixes
+
+* **gitea:** handle refs that exist as branches and tags ([0289ceb](https://github.com/vtavernier/gitr-backup/commit/0289cebcc58a712f74796cc223daa6e683e1a952))
+
+
+### Features
+
+* allow selecting repositories with arguments ([f08729e](https://github.com/vtavernier/gitr-backup/commit/f08729e974b053414bd1f99a133ff83f1a758fa6))
+
 ## [0.2.1](https://github.com/vtavernier/gitr-backup/compare/v0.2.0...v0.2.1) (2023-05-01)
 
 
