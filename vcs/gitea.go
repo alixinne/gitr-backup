@@ -117,6 +117,7 @@ func (giteaClient *Gitea) CreateRepository(ctx context.Context, options *CreateR
 		repo, _, err = client.CreateRepo(gitea.CreateRepoOption{
 			Name:        options.Name,
 			Description: options.Description,
+			Private:     true,
 		})
 		return err
 	})
