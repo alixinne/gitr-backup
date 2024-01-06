@@ -1,3 +1,11 @@
+## [0.3.1](https://github.com/vtavernier/gitr-backup/compare/v0.3.0...v0.3.1) (2024-01-06)
+
+
+### Bug Fixes
+
+* **docker:** update python3 ([95e55a0](https://github.com/vtavernier/gitr-backup/commit/95e55a001c3bea699e3afdde7b86741564a01201))
+* **gitea:** create private repositories by default ([1c50dfe](https://github.com/vtavernier/gitr-backup/commit/1c50dfe262fbad56012dcd8b8b02eb4c690c1ce9))
+
 # [0.3.0](https://github.com/vtavernier/gitr-backup/compare/v0.2.1...v0.3.0) (2023-05-02)
 
 
