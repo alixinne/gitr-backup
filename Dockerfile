@@ -1,10 +1,10 @@
 FROM docker.io/library/golang:1.20.3-alpine3.17 AS build
 
 RUN apk add --no-cache \
-        build-base==0.5-r3 \
-	cmake==3.24.4-r0 \
-	python3==3.10.13-r0 \
-	pkgconf==1.9.4-r0
+	build-base=~0.5 \
+	cmake=~3.24 \
+	python3=~3.10 \
+	pkgconf=~1.9
 
 WORKDIR /src
 COPY . /src
