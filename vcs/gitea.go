@@ -84,6 +84,10 @@ func (giteaClient *Gitea) GetRepositories(ctx context.Context) ([]repository.Rep
 		}
 
 		for _, repo := range repos {
+			if repo.Owner.UserName != giteaClient.username {
+				continue
+			}
+
 			logger.Debug().Msgf("Found repository: %s (%s)", repo.Name, repo.Description)
 			allRepos = append(allRepos, &giteaRepository{
 				host: giteaClient,
