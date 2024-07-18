@@ -1,3 +1,10 @@
+## [0.3.3](https://github.com/alixinne/gitr-backup/compare/v0.3.2...v0.3.3) (2024-07-18)
+
+
+### Bug Fixes
+
+* **gitea:** fix infinite loop ([3862f00](https://github.com/alixinne/gitr-backup/commit/3862f00fb90961fef7b2a110e15facb1e6284451))
+
 ## [0.3.2](https://github.com/alixinne/gitr-backup/compare/v0.3.1...v0.3.2) (2024-07-18)
 
 
