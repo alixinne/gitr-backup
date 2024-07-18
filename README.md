@@ -1,11 +1,11 @@
-# [gitr-backup](https://github.com/vtavernier/gitr-backup)
+# [gitr-backup](https://github.com/alixinne/gitr-backup)
 
 gitr-backup is a tool to mirror personal repositories from one Git hosting
 service to another. This is mainly used for backing up repositories on
 platforms that do not natively support pull mirrors (Gitea, GitHub, GitLab CE).
 
 This is a successor (and rewrite) of
-[gem-repositories](https://github.com/vtavernier/gem-repositories). This
+[gem-repositories](https://github.com/alixinne/gem-repositories). This
 rewrite is not complete and does not cover the entire feature set of
 gem-repositories:
 
@@ -25,7 +25,7 @@ gem-repositories:
 To run this project from source:
 
 ```bash
-git clone --recurse-submodules https://github.com/vtavernier/gitr-backup.git
+git clone --recurse-submodules https://github.com/alixinne/gitr-backup.git
 cd gitr-backup
 make -C git2go install-static
 go run -tags static .
@@ -36,7 +36,7 @@ go run -tags static .
 This project is distributed as a Docker image built using GitHub Actions.
 
 ```bash
-docker run --rm -it -v $PWD/config.yaml:/config.yaml:ro ghcr.io/vtavernier/gitr-backup:0.2.0
+docker run --rm -it -v $PWD/config.yaml:/config.yaml:ro ghcr.io/alixinne/gitr-backup:0.2.0
 ```
 
 ### Configuration file
@@ -69,4 +69,4 @@ source repositories.
 
 ## Author
 
-Vincent Tavernier <v.tavernier@pm.me>
+Alixinne <alixinne@pm.me>

@@ -15,6 +15,6 @@ RUN make -C git2go install-static && \
 FROM docker.io/library/alpine:3.17 AS run
 
 COPY --from=build /src/gitr-backup /
-LABEL org.opencontainers.image.source https://github.com/vtavernier/gitr-backup
+LABEL org.opencontainers.image.source https://github.com/alixinne/gitr-backup
 
 ENTRYPOINT ["/gitr-backup"]

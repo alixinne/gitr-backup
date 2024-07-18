@@ -1,5 +1,5 @@
 /*
-Copyright © 2023 Vincent Tavernier <v.tavernier@pm.me>
+Copyright © 2023 Alixinne <alixinne@pm.me>
 */
 package main
 
