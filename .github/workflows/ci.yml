@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    uses: vtavernier/github-workflows/.github/workflows/build-go-docker.yml@v1
+    uses: alixinne/github-workflows/.github/workflows/build-go-docker.yml@v1
     # https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
     permissions:
       contents: write # It's the GH_TOKEN that writes back to the repository, but this is needed for creating a release
