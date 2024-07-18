@@ -1,3 +1,10 @@
+## [0.3.2](https://github.com/alixinne/gitr-backup/compare/v0.3.1...v0.3.2) (2024-07-18)
+
+
+### Bug Fixes
+
+* **gitea:** ignore non-owned repositories ([c7a5398](https://github.com/alixinne/gitr-backup/commit/c7a53984c9a9b96f634a07e936f8a29f33ccc95d))
+
 ## [0.3.1](https://github.com/vtavernier/gitr-backup/compare/v0.3.0...v0.3.1) (2024-01-06)
 
 
