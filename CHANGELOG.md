@@ -1,3 +1,10 @@
+## [0.3.4](https://github.com/alixinne/gitr-backup/compare/v0.3.3...v0.3.4) (2024-07-18)
+
+
+### Bug Fixes
+
+* update github profile information ([422df90](https://github.com/alixinne/gitr-backup/commit/422df901c8f6ef4475ef12de310ae7371eb1532a))
+
 ## [0.3.3](https://github.com/alixinne/gitr-backup/compare/v0.3.2...v0.3.3) (2024-07-18)
 
 
