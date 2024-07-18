@@ -62,6 +62,7 @@ func (giteaClient *Gitea) GetRepositories(ctx context.Context) ([]repository.Rep
 	logger := log.With().Str("host", giteaClient.config.Name).Logger()
 
 	allRepos := []repository.Repository{}
+	ignoredRepoCount := 0
 	options := gitea.ListReposOptions{
 		ListOptions: gitea.ListOptions{
 			Page:     1,
@@ -85,6 +86,7 @@ func (giteaClient *Gitea) GetRepositories(ctx context.Context) ([]repository.Rep
 
 		for _, repo := range repos {
 			if repo.Owner.UserName != giteaClient.username {
+				ignoredRepoCount += 1
 				continue
 			}
 
@@ -100,7 +102,7 @@ func (giteaClient *Gitea) GetRepositories(ctx context.Context) ([]repository.Rep
 			return nil, err
 		}
 
-		if totalCount <= len(allRepos) {
+		if totalCount <= ignoredRepoCount + len(allRepos) {
 			break
 		}
 
