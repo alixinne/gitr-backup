@@ -1,7 +1,9 @@
+version: "2"
+
 run:
   build-tags:
     - static
 
-linters-settings:
-  gofmt:
-    enabled: true
+formatters:
+  enable:
+    - gofmt
