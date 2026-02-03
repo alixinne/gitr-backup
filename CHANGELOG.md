@@ -1,3 +1,10 @@
+# [0.4.0](https://github.com/alixinne/gitr-backup/compare/v0.3.4...v0.4.0) (2026-02-03)
+
+
+### Features
+
+* **gitea:** disable actions on repository creation ([f921310](https://github.com/alixinne/gitr-backup/commit/f921310b84ad968013d1b571d4f91f4ed9cbd75e))
+
 ## [0.3.4](https://github.com/alixinne/gitr-backup/compare/v0.3.3...v0.3.4) (2024-07-18)
 
 
