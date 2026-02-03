@@ -3,10 +3,11 @@ package vcs
 import (
 	"context"
 	"errors"
-	"gitr-backup/config"
-	"gitr-backup/vcs/repository"
 	"strconv"
 	"sync"
+
+	"gitr-backup/config"
+	"gitr-backup/vcs/repository"
 
 	"code.gitea.io/sdk/gitea"
 	"github.com/rs/zerolog/log"
@@ -79,7 +80,6 @@ func (giteaClient *Gitea) GetRepositories(ctx context.Context) ([]repository.Rep
 			repos, resp, err = client.ListMyRepos(options)
 			return err
 		})
-
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +102,7 @@ func (giteaClient *Gitea) GetRepositories(ctx context.Context) ([]repository.Rep
 			return nil, err
 		}
 
-		if totalCount <= ignoredRepoCount + len(allRepos) {
+		if totalCount <= ignoredRepoCount+len(allRepos) {
 			break
 		}
 
@@ -127,10 +127,19 @@ func (giteaClient *Gitea) CreateRepository(ctx context.Context, options *CreateR
 		})
 		return err
 	})
-
 	if err != nil {
 		return nil, err
 	}
+
+	// Disable actions: if a runner on the destination repository matches
+	// an existing label, it may run arbitrary code if it's updated from a
+	// fork, for example.
+	err = giteaClient.withContext(ctx, func(client *gitea.Client) error {
+		_, _, err := client.EditRepo(repo.Owner.LoginName, repo.Name, gitea.EditRepoOption{
+			HasActions: gitea.OptionalBool(false),
+		})
+		return err
+	})
 
 	return &giteaRepository{
 		host: giteaClient,
