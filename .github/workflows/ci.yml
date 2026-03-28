@@ -18,6 +18,7 @@ jobs:
       packages: write # For pushing to docker
     with:
       submodules: recursive
+      go_version: 1.26.1
     secrets:
       docker_password: ${{ secrets.GITHUB_TOKEN }}
       GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
