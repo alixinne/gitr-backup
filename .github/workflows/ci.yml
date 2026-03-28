@@ -19,6 +19,7 @@ jobs:
     with:
       submodules: recursive
       go_version: 1.26.1
+      golangci_lint_version: 2.11.4
     secrets:
       docker_password: ${{ secrets.GITHUB_TOKEN }}
       GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
