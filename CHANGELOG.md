@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/alixinne/gitr-backup/compare/v0.4.0...v0.4.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* detect missing repositories on sources ([d9127a0](https://github.com/alixinne/gitr-backup/commit/d9127a046b2f7cd9bb6d90d957c311bc26ffffdd))
+
 # [0.4.0](https://github.com/alixinne/gitr-backup/compare/v0.3.4...v0.4.0) (2026-02-03)
 
 
