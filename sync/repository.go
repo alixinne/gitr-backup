@@ -279,9 +279,15 @@ func (syncCtx *syncContext) processRepo(logger zerolog.Logger, destRepo reposito
 	}
 
 	// Try getting the source repository from the host
-	sourceRepo, err := source.host.GetRepositoryByUrl(syncCtx.ctx, source.source)
+	sourceRepo, found, err := source.host.GetRepositoryByUrl(syncCtx.ctx, source.source)
 	if err != nil {
 		return fmt.Errorf("failed getting repository from source host: %w", err)
+	}
+
+	// Check that the source repository isn't gone
+	if !found {
+		logger.Warn().Str("source_host", source.host.GetConfig().Name).Msg("Orphaned backup repository")
+		return nil
 	}
 
 	// Get the refs for the source repository

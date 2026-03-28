@@ -5,6 +5,7 @@ import (
 	"errors"
 	"gitr-backup/config"
 	"gitr-backup/vcs/repository"
+	"net/http"
 	"strings"
 
 	"github.com/google/go-github/v50/github"
@@ -79,15 +80,22 @@ func (githubClient *GitHub) GetRepositories(ctx context.Context) ([]repository.R
 	return allRepos, nil
 }
 
-func (githubClient *GitHub) GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, error) {
+func (githubClient *GitHub) GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, bool, error) {
 	repositoryParts := strings.SplitN(strings.TrimLeft(strings.TrimPrefix(url, githubClient.config.BaseUrl), "/"), "/", 3)
 	if len(repositoryParts) != 2 {
-		return nil, errors.New("invalid repository url for this host")
+		return nil, false, errors.New("invalid repository url for this host")
 	}
 
-	repo, _, err := githubClient.client.Repositories.Get(ctx, repositoryParts[0], repositoryParts[1])
+	repo, resp, err := githubClient.client.Repositories.Get(ctx, repositoryParts[0], repositoryParts[1])
 	if err != nil {
-		return nil, err
+		// If the response is an HTTP 404, consider the repository gone
+		// instead of reporting a generic error
+		// The caller should handle this as an orphaned repository.
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return nil, false, nil
+		}
+
+		return nil, false, err
 	}
 
 	var ghRepo repository.Repository = &githubRepository{
@@ -95,7 +103,7 @@ func (githubClient *GitHub) GetRepositoryByUrl(ctx context.Context, url string) 
 		repo: repo,
 	}
 
-	return &ghRepo, nil
+	return &ghRepo, true, nil
 }
 
 func (githubClient *GitHub) CreateRepository(ctx context.Context, options *CreateRepositoryOptions) (repository.Repository, error) {

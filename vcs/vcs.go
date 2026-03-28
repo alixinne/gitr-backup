@@ -18,7 +18,7 @@ type CreateRepositoryOptions struct {
 type Vcs interface {
 	GetConfig() *config.Host
 	GetRepositories(ctx context.Context) ([]repository.Repository, error)
-	GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, error)
+	GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, bool, error)
 	CreateRepository(ctx context.Context, options *CreateRepositoryOptions) (repository.Repository, error)
 }
 

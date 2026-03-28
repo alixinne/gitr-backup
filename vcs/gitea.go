@@ -112,8 +112,8 @@ func (giteaClient *Gitea) GetRepositories(ctx context.Context) ([]repository.Rep
 	return allRepos, nil
 }
 
-func (giteaClient *Gitea) GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, error) {
-	return nil, errors.New("not implemented")
+func (giteaClient *Gitea) GetRepositoryByUrl(ctx context.Context, url string) (*repository.Repository, bool, error) {
+	return nil, false, errors.New("not implemented")
 }
 
 func (giteaClient *Gitea) CreateRepository(ctx context.Context, options *CreateRepositoryOptions) (repository.Repository, error) {
