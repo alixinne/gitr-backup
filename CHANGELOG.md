@@ -1,3 +1,10 @@
+## [0.4.2](https://github.com/alixinne/gitr-backup/compare/v0.4.1...v0.4.2) (2026-07-22)
+
+
+### Bug Fixes
+
+* **gitea:** disable all unwanted features in backups ([7e095ce](https://github.com/alixinne/gitr-backup/commit/7e095ceb3eb19610791a2e0e4d6301758f120f6f))
+
 ## [0.4.1](https://github.com/alixinne/gitr-backup/compare/v0.4.0...v0.4.1) (2026-03-28)
 
 
