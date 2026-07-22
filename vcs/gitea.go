@@ -136,7 +136,13 @@ func (giteaClient *Gitea) CreateRepository(ctx context.Context, options *CreateR
 	// fork, for example.
 	err = giteaClient.withContext(ctx, func(client *gitea.Client) error {
 		_, _, err := client.EditRepo(repo.Owner.LoginName, repo.Name, gitea.EditRepoOption{
-			HasActions: gitea.OptionalBool(false),
+			HasActions:      gitea.OptionalBool(false),
+			HasIssues:       gitea.OptionalBool(false),
+			HasPackages:     gitea.OptionalBool(false),
+			HasProjects:     gitea.OptionalBool(false),
+			HasPullRequests: gitea.OptionalBool(false),
+			HasReleases:     gitea.OptionalBool(false),
+			HasWiki:         gitea.OptionalBool(false),
 		})
 		return err
 	})
